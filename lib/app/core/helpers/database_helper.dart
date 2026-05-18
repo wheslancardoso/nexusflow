@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -11,6 +12,10 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
+    if (kIsWeb) {
+      _database = WebMockDatabase();
+      return _database!;
+    }
     _database = await _initDatabase();
     return _database!;
   }
@@ -139,4 +144,100 @@ class DatabaseHelper {
       )
     ''');
   }
+}
+
+// 🌐 WEB-COMPATIBLE MOCK SQLITE DATABASE EXECUTION LAYER
+class WebMockDatabase implements Database {
+  static final Map<String, List<Map<String, dynamic>>> _storage = {};
+  static int _idCounter = 0;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<int> insert(String table, Map<String, Object?> values,
+      {String? nullColumnHack, ConflictAlgorithm? conflictAlgorithm}) async {
+    _storage[table] ??= [];
+    final map = Map<String, dynamic>.from(values);
+    if (map['id'] == null) {
+      _idCounter++;
+      map['id'] = _idCounter;
+    }
+    _storage[table]!.add(map);
+    return map['id'] as int;
+  }
+
+  @override
+  Future<int> update(String table, Map<String, Object?> values,
+      {String? where,
+      List<Object?>? whereArgs,
+      ConflictAlgorithm? conflictAlgorithm}) async {
+    _storage[table] ??= [];
+    int count = 0;
+    
+    final idArg = whereArgs?.first;
+    if (idArg != null) {
+      for (var i = 0; i < _storage[table]!.length; i++) {
+        if (_storage[table]![i]['id'] == idArg) {
+          final existing = _storage[table]![i];
+          final updated = Map<String, dynamic>.from(existing)..addAll(values);
+          _storage[table]![i] = updated;
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> query(String table,
+      {bool? distinct,
+      List<String>? columns,
+      String? where,
+      List<Object?>? whereArgs,
+      String? groupBy,
+      String? having,
+      String? orderBy,
+      int? limit,
+      int? offset}) async {
+    _storage[table] ??= [];
+    var list = _storage[table]!;
+
+    if (where != null && whereArgs != null && whereArgs.isNotEmpty) {
+      final conditions = where.split(RegExp(r'AND|and'));
+      for (int i = 0; i < conditions.length; i++) {
+        if (i >= whereArgs.length) break;
+        final condition = conditions[i].trim();
+        final match = RegExp(r'([a-zA-Z0-9_]+)\s*=').firstMatch(condition);
+        if (match != null) {
+          final column = match.group(1)!;
+          final value = whereArgs[i];
+          list = list.where((row) => row[column] == value).toList();
+        }
+      }
+      return list;
+    }
+    
+    return list;
+  }
+
+  @override
+  Future<int> delete(String table, {String? where, List<Object?>? whereArgs}) async {
+    _storage[table] ??= [];
+    final idArg = whereArgs?.first;
+    if (idArg != null) {
+      final initialLength = _storage[table]!.length;
+      _storage[table]!.removeWhere((row) => row['id'] == idArg);
+      return initialLength - _storage[table]!.length;
+    }
+    final count = _storage[table]!.length;
+    _storage[table]!.clear();
+    return count;
+  }
+
+  @override
+  Future<void> execute(String sql, [List<Object?>? arguments]) async {}
+
+  @override
+  Future<void> close() async {}
 }

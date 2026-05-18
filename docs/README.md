@@ -77,12 +77,12 @@ O projeto implementa uma **Arquitetura Offline-First com Camadas Base**, focada 
 7.  **Sistema de Logging:** LogService centralizado com persistência SQLite e tratamento de erros padronizado
 8.  **Sistema de Mixins:** LoaderMixin + MessagesMixin + BaseController com operações centralizadas funcionais
 9.  **Fluxo de Exceções:** Convergência automática de todas as exceções para mensagens de usuário amigáveis
+10. **Ordens de Serviço:** Faturamento e registro unificado de O.S. + cadastro reativo de novo cliente via CPF no SQLite, desenhado com estética Liquid Glass premium e validado por testes automatizados.
 
 ### 🚧 **Em Desenvolvimento (EmDesenvolvimentoPage):**
-1.  **Ordens de Serviço:** Interface de gestão de O.S. com evidências
-2.  **Relatórios:** Dashboards e métricas do sistema
-3.  **Estoque:** Controle de produtos e materiais
-4.  **Configurações:** Administração de sistema e preferências
+1.  **Relatórios:** Dashboards e métricas do sistema
+2.  **Estoque:** Controle de produtos e materiais
+3.  **Configurações:** Administração de sistema e preferências
 
 ---
 

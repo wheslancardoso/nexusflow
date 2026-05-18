@@ -16,6 +16,7 @@ Clique em qualquer seção para ir direto ao tema:
 6. [📋 Sistema de Logs e Diagnósticos](#-6-sistema-de-logs-e-diagnósticos) — *Auditoria offline robusta sem prints sujos.*
 7. [🧪 Cobertura de Testes Automatizados (21 Testes)](#-7-cobertura-de-testes-automatizados-21-testes) — *Como provamos que o sistema é indestrutível.*
 8. [🎤 Roteiro de Apresentação (Script Passo a Passo)](#-8-roteiro-de-apresentação-script-passo-a-passo) — *O que cada integrante deve falar e demonstrar no dia 21/05.*
+9. [🛠️ Guia de Configuração, Execução e Debug](#-9-guia-de-configuração-execução-e-debug) — *Como rodar o app, testes e ver logs localmente.*
 
 ---
 
@@ -223,6 +224,44 @@ Use este roteiro para ensaiar com o grupo. Ele está estruturado para durar de *
 * **O que mostrar em tela / Concluir:**
   * Mostrar a aba "Equipe" demonstrando a sincronização dos técnicos.
   * Concluir a apresentação reforçando a nota técnica excelente do projeto: arquitetura limpa, interface moderna, banco local de alta resiliência e validação matemática de código via testes automatizados.
+
+---
+
+## 🛠️ 9. Guia de Configuração, Execução e Debug
+
+Esta seção é um utilitário prático para que qualquer integrante do grupo consiga rodar o NexusFlow em sua própria máquina de desenvolvimento sem atritos.
+
+### 📥 1. Inicializando as Dependências
+Abra o terminal na raiz do projeto e execute o comando abaixo para baixar todas as dependências do Flutter (incluindo o suporte à testes `integration_test`):
+```bash
+flutter pub get
+```
+
+### ⚙️ 2. Banco de Dados SQLite (Mock Inteligente vs Físico)
+* **Em Dispositivos Físicos / Simuladores (Android/iOS)**: O aplicativo utiliza o banco de dados SQLite real via biblioteca local nativa. A criação de tabelas é 100% automática ao inicializar o app pela primeira vez.
+* **Em Navegadores Web (Chrome/Web-Server)**: Como navegadores não possuem suporte de driver nativo direto para SQLite C, implementamos um mock em memória inteligente (`WebMockDatabase` em [database_helper.dart](file:///home/lan/nexusflow/lib/app/core/helpers/database_helper.dart)) que simula perfeitamente o comportamento e as colunas padrão (`ativo = 1` por padrão) para testes e apresentações em browser sem quebrar nada!
+
+### 🏃 3. Executando o Aplicativo
+Você pode rodar o aplicativo de forma direcionada para o Chrome (excelente para apresentação em datashow):
+```bash
+flutter run -d chrome
+```
+Ou no servidor web local na porta de sua escolha:
+```bash
+flutter run -d web-server --web-port 8080
+```
+
+### 🧪 4. Executando a Suite de Testes
+Para provar que nenhuma alteração quebrou a integridade das regras de negócio antes ou durante a apresentação, execute todos os 21 testes integrados via linha de comando:
+```bash
+flutter test
+```
+
+### 🔍 5. Como visualizar Logs e Debug no Console
+O sistema possui o `LogService` centralizado. Caso precise demonstrar o funcionamento dos logs ao vivo ou verificar erros no console, todos os eventos relevantes do app são impressos no terminal com tags coloridas estruturadas:
+* `[INFO]` - Mensagens informativas de rotinas comuns de tela.
+* `[WARNING]` - Avisos de atenção (ex: CPF não localizado).
+* `[ERROR]` - Falhas de sistema capturadas com stack trace completo para auditoria.
 
 ---
 

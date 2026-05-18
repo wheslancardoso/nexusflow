@@ -1,30 +1,35 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:nexusflow/main.dart';
+import 'package:provider/provider.dart';
+import 'package:nexusflow/app/modules/auth/presentation/pages/login_page.dart';
+import 'package:nexusflow/app/modules/auth/controllers/login_controller.dart';
+import 'package:nexusflow/app/core/di/dependency_injection.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const AppEntry());
+  setUpAll(() async {
+    await getIt.reset();
+    getIt.registerFactory<LoginController>(() => LoginController());
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Deve renderizar os componentes da LoginPage com sucesso', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => getIt<LoginController>()),
+        ],
+        child: const MaterialApp(
+          home: LoginPage(),
+        ),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verifica se os elementos da nova página de Login Glassmorphic estão na tela
+    expect(find.text('NexusFlow'), findsOneWidget);
+    expect(find.text('Acessar Sistema'), findsOneWidget);
+    expect(find.byKey(const Key('login-email-field')), findsOneWidget);
+    expect(find.byKey(const Key('login-password-field')), findsOneWidget);
+    expect(find.byKey(const Key('login-btn')), findsOneWidget);
   });
 }

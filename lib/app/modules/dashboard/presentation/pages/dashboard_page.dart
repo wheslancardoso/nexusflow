@@ -297,17 +297,17 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildTabItem(0, Icons.dashboard_outlined, Icons.dashboard, 'Painel'),
-            _buildTabItem(1, Icons.people_outline, Icons.people, 'Clientes'),
-            _buildTabItem(2, Icons.add_task_outlined, Icons.add_task, 'Nova OS'),
-            _buildTabItem(3, Icons.shield_outlined, Icons.shield, 'Equipe'),
+            _buildTabItem(0, Icons.dashboard_outlined, Icons.dashboard, 'Painel', const Key('tab-painel')),
+            _buildTabItem(1, Icons.people_outline, Icons.people, 'Clientes', const Key('tab-clientes')),
+            _buildTabItem(2, Icons.add_task_outlined, Icons.add_task, 'Nova OS', const Key('tab-nova-os')),
+            _buildTabItem(3, Icons.shield_outlined, Icons.shield, 'Equipe', const Key('tab-equipe')),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTabItem(int index, IconData outlineIcon, IconData solidIcon, String label) {
+  Widget _buildTabItem(int index, IconData outlineIcon, IconData solidIcon, String label, Key key) {
     final isActive = _activeTab == index;
     final activeColor = index == 0
         ? const Color(0xFF818CF8) // Indigo
@@ -319,6 +319,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Expanded(
       child: InkWell(
+        key: key,
         onTap: () {
           setState(() {
             _activeTab = index;
@@ -1054,6 +1055,7 @@ class _DashboardPageState extends State<DashboardPage> {
     TextInputType keyboard = TextInputType.text,
     void Function(String)? onChanged,
     Widget? suffixIcon,
+    Key? key,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1062,6 +1064,7 @@ class _DashboardPageState extends State<DashboardPage> {
         border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: TextFormField(
+        key: key,
         controller: ctrl,
         validator: validator,
         keyboardType: keyboard,
@@ -1193,6 +1196,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       )
                     : null,
+                key: const Key('os-cpf-field'),
               ),
               const SizedBox(height: 12),
 
@@ -1202,6 +1206,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 'Nome Completo do Cliente',
                 Icons.person_outline,
                 null,
+                key: const Key('os-nome-field'),
               ),
               const SizedBox(height: 12),
 
@@ -1212,6 +1217,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Icons.phone_outlined,
                 null,
                 keyboard: TextInputType.phone,
+                key: const Key('os-fone-field'),
               ),
               const SizedBox(height: 12),
 
@@ -1222,6 +1228,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Icons.mail_outline,
                 null,
                 keyboard: TextInputType.emailAddress,
+                key: const Key('os-email-field'),
               ),
               const SizedBox(height: 12),
 
@@ -1231,6 +1238,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 'Endereço Residencial (Opcional)',
                 Icons.location_on_outlined,
                 null,
+                key: const Key('os-endereco-field'),
               ),
             ],
           ),
@@ -1275,6 +1283,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: TextField(
+                  key: const Key('os-desc-field'),
                   controller: _osDescriptionController,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   maxLines: 3,
@@ -1307,6 +1316,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: TextField(
+                  key: const Key('os-val-field'),
                   controller: _osValueController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -1417,6 +1427,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
               // Glowing Register OS button
               ElevatedButton(
+                key: const Key('os-faturar-btn'),
                 onPressed: _isSavingOS ? null : () => _handleSaveOS(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00E5FF), // Cyber Cyan glowing action

@@ -79,6 +79,7 @@ class _LoginPageState extends State<LoginPage> with MessagesMixin, ValidatorMixi
                         ),
                         const SizedBox(height: 24),
                         CustomTextField(
+                          key: const Key('login-email-field'),
                           label: 'E-mail',
                           controller: _emailController,
                           icon: Icons.email_outlined,
@@ -87,6 +88,7 @@ class _LoginPageState extends State<LoginPage> with MessagesMixin, ValidatorMixi
                         ),
                         const SizedBox(height: 16),
                         CustomTextField(
+                          key: const Key('login-password-field'),
                           label: 'Senha',
                           controller: _passwordController,
                           icon: Icons.lock_outline,
@@ -98,6 +100,7 @@ class _LoginPageState extends State<LoginPage> with MessagesMixin, ValidatorMixi
                         
                         // Premium Glowing Yellow/Amber Elevated button
                         ElevatedButton(
+                          key: const Key('login-btn'),
                           onPressed: controller.isLoading
                               ? null
                               : () async {

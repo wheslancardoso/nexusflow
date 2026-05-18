@@ -13,4 +13,8 @@ class ClienteService extends BaseService<Cliente, ClienteRepository, ClienteVali
   Cliente cloneModelWithId(Cliente model, int id) {
     return model.copyWith(id: id);
   }
+
+  Future<Cliente?> findByDocumento(String documento) async {
+    return await repository.findByDocumento(documento);
+  }
 }

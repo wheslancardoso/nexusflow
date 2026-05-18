@@ -33,8 +33,15 @@ class _DashboardPageState extends State<DashboardPage> {
   final _searchClientController = TextEditingController();
   String _clientSearchQuery = '';
 
-  // New OS Tab form variables
-  Cliente? _selectedCliente;
+  // New OS Tab form variables (Frictionless Unified Flow)
+  final _osClientCpfController = TextEditingController();
+  final _osClientNomeController = TextEditingController();
+  final _osClientEmailController = TextEditingController();
+  final _osClientFoneController = TextEditingController();
+  final _osClientEnderecoController = TextEditingController();
+  bool _isExistingClient = false;
+  bool _isSearchingCpf = false;
+
   final _osDescriptionController = TextEditingController();
   final _osValueController = TextEditingController();
   List<Offset?> _signaturePoints = [];
@@ -55,9 +62,69 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void dispose() {
     _searchClientController.dispose();
+    _osClientCpfController.dispose();
+    _osClientNomeController.dispose();
+    _osClientEmailController.dispose();
+    _osClientFoneController.dispose();
+    _osClientEnderecoController.dispose();
     _osDescriptionController.dispose();
     _osValueController.dispose();
     super.dispose();
+  }
+
+  String _formatCpf(String text) {
+    final clean = text.replaceAll(RegExp(r'\D'), '');
+    if (clean.length <= 3) return clean;
+    if (clean.length <= 6) return '${clean.substring(0, 3)}.${clean.substring(3)}';
+    if (clean.length <= 9) return '${clean.substring(0, 3)}.${clean.substring(3, 6)}.${clean.substring(6)}';
+    final capped = clean.substring(0, 11);
+    return '${capped.substring(0, 3)}.${capped.substring(3, 6)}.${capped.substring(6, 9)}-${capped.substring(9)}';
+  }
+
+  Future<void> _onCpfChanged(String value) async {
+    final clean = value.replaceAll(RegExp(r'\D'), '');
+    if (clean.length == 11) {
+      setState(() => _isSearchingCpf = true);
+      try {
+        final client = await getIt<ClienteService>().findByDocumento(clean);
+        if (client != null) {
+          setState(() {
+            _osClientNomeController.text = client.nome;
+            _osClientEmailController.text = client.email;
+            _osClientFoneController.text = client.telefone;
+            _osClientEnderecoController.text = client.endereco ?? '';
+            _isExistingClient = true;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✓ Cliente ${client.nome} identificado no SQLite!'),
+                backgroundColor: const Color(0xFF10B981),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          setState(() {
+            _isExistingClient = false;
+          });
+        }
+      } catch (e) {
+        // Safe fallback
+      } finally {
+        setState(() => _isSearchingCpf = false);
+      }
+    } else {
+      if (_isExistingClient) {
+        setState(() {
+          _isExistingClient = false;
+          _osClientNomeController.clear();
+          _osClientEmailController.clear();
+          _osClientFoneController.clear();
+          _osClientEnderecoController.clear();
+        });
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -987,6 +1054,8 @@ class _DashboardPageState extends State<DashboardPage> {
     IconData icon,
     String? Function(String?)? validator, {
     TextInputType keyboard = TextInputType.text,
+    void Function(String)? onChanged,
+    Widget? suffixIcon,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -998,9 +1067,16 @@ class _DashboardPageState extends State<DashboardPage> {
         controller: ctrl,
         validator: validator,
         keyboardType: keyboard,
+        onChanged: onChanged,
         style: const TextStyle(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.white38, size: 18),
+          suffixIcon: suffixIcon != null
+              ? Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: suffixIcon,
+                )
+              : null,
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white38, fontSize: 13),
           filled: false,
@@ -1017,8 +1093,6 @@ class _DashboardPageState extends State<DashboardPage> {
   // TAB 3: NOVA OS WIZARD (NO NAVIGATION FRICTION)
   // ==========================================
   Widget _buildNewOsTab() {
-    final hasClients = _clientes.isNotEmpty;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1032,7 +1106,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Crie uma Ordem de Serviço em 1 passo, com assinatura em tempo real.',
+          'Crie uma Ordem de Serviço em 1 passo, com assinatura e cadastro em tempo real.',
           style: TextStyle(
             color: Colors.white.withOpacity(0.4),
             fontSize: 12,
@@ -1040,258 +1114,360 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         const SizedBox(height: 20),
 
-        if (!hasClients)
-          GlassContainer(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Icon(Icons.group_add_outlined, color: Colors.white.withOpacity(0.3), size: 48),
-                const SizedBox(height: 14),
-                const Text(
-                  'Sem clientes para vincular',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Você precisa ter ao menos um cliente cadastrado no SQLite antes de emitir uma Ordem de Serviço.',
-                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => setState(() => _activeTab = 1), // Swap to Clients tab
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E5FF),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Cadastrar Cliente Agora'),
-                ),
-              ],
-            ),
-          )
-        else
-          GlassContainer(
-            padding: const EdgeInsets.all(20),
-            borderColor: Colors.white.withOpacity(0.1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Cliente Dropdown select
-                const Text(
-                  'Selecione o Cliente',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<Cliente>(
-                      dropdownColor: const Color(0xFF0F0C1B),
-                      value: _selectedCliente ?? _clientes.first,
-                      items: _clientes.map((c) {
-                        return DropdownMenuItem<Cliente>(
-                          value: c,
-                          child: Text(
-                            c.nome,
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (Cliente? val) {
-                        setState(() {
-                          _selectedCliente = val;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Descricao textfield
-                const Text(
-                  'Descrição Detalhada do Serviço',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                  ),
-                  child: TextField(
-                    controller: _osDescriptionController,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Escreva detalhes do reparo, peças trocadas...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Valor textfield
-                const Text(
-                  'Valor Estimado (R\$)',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
-                  ),
-                  child: TextField(
-                    controller: _osValueController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Ex: 150.00',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // IN-PLACE DRAWING SIGNATURE PAD (PURE FLUTTER GESTURES)
-                GlassSignaturePad(
-                  onSignatureChanged: (points) {
-                    _signaturePoints = points;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // Rounded photo blocks (Mock Camera choice)
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _hasFotoAntes = !_hasFotoAntes);
-                        },
-                        child: Container(
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: _hasFotoAntes ? const Color(0xFF00E5FF).withOpacity(0.05) : Colors.white.withOpacity(0.02),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: _hasFotoAntes ? const Color(0xFF00E5FF).withOpacity(0.4) : Colors.white.withOpacity(0.08),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _hasFotoAntes ? Icons.check_circle : Icons.add_a_photo_outlined,
-                                color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
-                                size: 22,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _hasFotoAntes ? 'Foto Antes ✓' : 'Foto Antes',
-                                style: TextStyle(
-                                  color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+        // SEÇÃO 1: DADOS DO CLIENTE (Auto-Busca por CPF)
+        GlassContainer(
+          padding: const EdgeInsets.all(20),
+          borderColor: Colors.white.withOpacity(0.1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.badge, color: Color(0xFFFBBF24), size: 18),
+                      const SizedBox(width: 8),
+                      const Text(
+                        '1. Identificação do Cliente',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _hasFotoDepois = !_hasFotoDepois);
-                        },
-                        child: Container(
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: _hasFotoDepois ? const Color(0xFF34D399).withOpacity(0.05) : Colors.white.withOpacity(0.02),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: _hasFotoDepois ? const Color(0xFF34D399).withOpacity(0.4) : Colors.white.withOpacity(0.08),
+                    ],
+                  ),
+                  if (_isExistingClient)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Color(0xFF10B981), size: 12),
+                          SizedBox(width: 4),
+                          Text(
+                            'CLIENTE IDENTIFICADO',
+                            style: TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _hasFotoDepois ? Icons.check_circle : Icons.add_a_photo_outlined,
-                                color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
-                                size: 22,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _hasFotoDepois ? 'Foto Depois ✓' : 'Foto Depois',
-                                style: TextStyle(
-                                  color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-
-                // Glowing Register OS button
-                ElevatedButton(
-                  onPressed: _isSavingOS ? null : () => _handleSaveOS(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E5FF), // Cyber Cyan glowing action
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    minimumSize: const Size(double.infinity, 50),
-                    elevation: 8,
-                    shadowColor: const Color(0xFF00E5FF).withOpacity(0.3),
-                  ),
-                  child: _isSavingOS
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5),
-                        )
-                      : const Text(
-                          'Registrar Ordem de Serviço',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.5),
+              // CPF com máscara
+              _buildModalGlassTextField(
+                _osClientCpfController,
+                'CPF / CNPJ do Cliente',
+                Icons.badge_outlined,
+                null,
+                keyboard: TextInputType.number,
+                onChanged: (val) {
+                  final formatted = _formatCpf(val);
+                  if (formatted != val) {
+                    _osClientCpfController.text = formatted;
+                    _osClientCpfController.selection = TextSelection.fromPosition(
+                      TextSelection.fromPosition(TextPosition(offset: formatted.length)).position,
+                    );
+                  }
+                  _onCpfChanged(formatted);
+                },
+                suffixIcon: _isSearchingCpf
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.0,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00E5FF)),
                         ),
-                ),
-              ],
-            ),
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 12),
+
+              // Nome completo
+              _buildModalGlassTextField(
+                _osClientNomeController,
+                'Nome Completo do Cliente',
+                Icons.person_outline,
+                null,
+              ),
+              const SizedBox(height: 12),
+
+              // WhatsApp
+              _buildModalGlassTextField(
+                _osClientFoneController,
+                'Telefone / WhatsApp',
+                Icons.phone_outlined,
+                null,
+                keyboard: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+
+              // E-mail
+              _buildModalGlassTextField(
+                _osClientEmailController,
+                'E-mail de Contato',
+                Icons.mail_outline,
+                null,
+                keyboard: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 12),
+
+              // Endereço
+              _buildModalGlassTextField(
+                _osClientEnderecoController,
+                'Endereço Residencial (Opcional)',
+                Icons.location_on_outlined,
+                null,
+              ),
+            ],
           ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // SEÇÃO 2: DADOS DO SERVIÇO, EVIDÊNCIAS & ASSINATURA
+        GlassContainer(
+          padding: const EdgeInsets.all(20),
+          borderColor: Colors.white.withOpacity(0.1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.build_circle, color: Color(0xFF00E5FF), size: 18),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '2. Detalhes da Ordem de Serviço',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Descricao textfield
+              const Text(
+                'Descrição Detalhada do Serviço',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: TextField(
+                  controller: _osDescriptionController,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Escreva detalhes do reparo, peças trocadas...',
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Valor textfield
+              const Text(
+                'Valor Estimado (R\$)',
+                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: TextField(
+                  controller: _osValueController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Ex: 150.00',
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // IN-PLACE DRAWING SIGNATURE PAD (PURE FLUTTER GESTURES)
+              GlassSignaturePad(
+                onSignatureChanged: (points) {
+                  _signaturePoints = points;
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // Rounded photo blocks (Mock Camera choice)
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _hasFotoAntes = !_hasFotoAntes);
+                      },
+                      child: Container(
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: _hasFotoAntes ? const Color(0xFF00E5FF).withOpacity(0.05) : Colors.white.withOpacity(0.02),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _hasFotoAntes ? const Color(0xFF00E5FF).withOpacity(0.4) : Colors.white.withOpacity(0.08),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _hasFotoAntes ? Icons.check_circle : Icons.add_a_photo_outlined,
+                              color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
+                              size: 22,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _hasFotoAntes ? 'Foto Antes ✓' : 'Foto Antes',
+                              style: TextStyle(
+                                color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() => _hasFotoDepois = !_hasFotoDepois);
+                      },
+                      child: Container(
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: _hasFotoDepois ? const Color(0xFF34D399).withOpacity(0.05) : Colors.white.withOpacity(0.02),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _hasFotoDepois ? const Color(0xFF34D399).withOpacity(0.4) : Colors.white.withOpacity(0.08),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _hasFotoDepois ? Icons.check_circle : Icons.add_a_photo_outlined,
+                              color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
+                              size: 22,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _hasFotoDepois ? 'Foto Depois ✓' : 'Foto Depois',
+                              style: TextStyle(
+                                color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Glowing Register OS button
+              ElevatedButton(
+                onPressed: _isSavingOS ? null : () => _handleSaveOS(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E5FF), // Cyber Cyan glowing action
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  minimumSize: const Size(double.infinity, 50),
+                  elevation: 8,
+                  shadowColor: const Color(0xFF00E5FF).withOpacity(0.3),
+                ),
+                child: _isSavingOS
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5),
+                      )
+                    : const Text(
+                        'Registrar Ordem de Serviço',
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.5),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
   Future<void> _handleSaveOS() async {
-    final client = _selectedCliente ?? (_clientes.isNotEmpty ? _clientes.first : null);
-    if (client == null) return;
+    final cpf = _osClientCpfController.text.replaceAll(RegExp(r'\D'), '');
+    if (cpf.length != 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, informe um CPF válido (11 dígitos).'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final nome = _osClientNomeController.text.trim();
+    if (nome.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, informe o nome completo do cliente.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final email = _osClientEmailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, informe um e-mail de contato válido.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final fone = _osClientFoneController.text.trim();
+    if (fone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, informe o telefone/WhatsApp do cliente.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
 
     final desc = _osDescriptionController.text.trim();
     if (desc.isEmpty) {
@@ -1305,7 +1481,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final value = double.tryParse(valText) ?? 0.0;
     if (value <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, informe um valor maior que R\$ 0.'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text('Por favor, informe um valor estimado válido.'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -1313,8 +1489,25 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() => _isSavingOS = true);
 
     try {
+      // 1. Cadastra o cliente atomicamente caso não exista previamente no SQLite
+      if (!_isExistingClient) {
+        final novoCliente = Cliente(
+          nome: nome,
+          email: email,
+          telefone: fone,
+          documento: cpf,
+          endereco: _osClientEnderecoController.text.trim().isNotEmpty
+              ? _osClientEnderecoController.text.trim()
+              : null,
+        );
+        await getIt<ClienteService>().create(novoCliente);
+        // Recarrega a lista de clientes locais
+        await _loadData();
+      }
+
+      // 2. Cria e persiste a Ordem de Serviço
       final newOS = ServiceOrder(
-        cliente: client.nome,
+        cliente: nome,
         descricao: desc,
         valor: value,
         status: 'Em aberto',
@@ -1327,34 +1520,40 @@ class _DashboardPageState extends State<DashboardPage> {
       final success = await controller.saveOrder(newOS);
 
       if (success) {
-        // Clear fields
+        // Limpa campos do formulário
+        _osClientCpfController.clear();
+        _osClientNomeController.clear();
+        _osClientEmailController.clear();
+        _osClientFoneController.clear();
+        _osClientEnderecoController.clear();
         _osDescriptionController.clear();
         _osValueController.clear();
         _signaturePoints.clear();
         _hasFotoAntes = false;
         _hasFotoDepois = false;
-        
-        // Notify dashboard controller to pull the newly added items
+        _isExistingClient = false;
+
+        // Notifica dashboard
         context.read<DashboardController>().refresh();
 
         setState(() {
           _isSavingOS = false;
-          _activeTab = 0; // Swipe to Painel Tab
+          _activeTab = 0; // Transiciona de volta para o Painel
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Nova Ordem de Serviço faturada com sucesso no SQLite!'),
+            content: Text('✓ O.S. faturada e cliente persistido com sucesso!'),
             backgroundColor: Colors.emerald,
           ),
         );
       } else {
-        throw Exception('Falha ao persistir O.S.');
+        throw Exception('Falha ao persistir O.S. no SQLite.');
       }
     } catch (err) {
       setState(() => _isSavingOS = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar O.S.: $err'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Erro ao salvar O.S. e cliente: $err'), backgroundColor: Colors.red),
       );
     }
   }

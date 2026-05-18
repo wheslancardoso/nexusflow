@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -12,7 +13,7 @@ class DatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    if (kIsWeb) {
+    if (kIsWeb || (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST'))) {
       _database = WebMockDatabase();
       return _database!;
     }
@@ -163,6 +164,7 @@ class WebMockDatabase implements Database {
       _idCounter++;
       map['id'] = _idCounter;
     }
+    map['ativo'] ??= 1;
     _storage[table]!.add(map);
     return map['id'] as int;
   }

@@ -1,9 +1,35 @@
 import 'package:flutter/material.dart';
 
-mixin LoaderMixin<T extends StatefulWidget> on State<T> {
+mixin LoaderMixin {
   OverlayEntry? _overlayEntry;
 
-  void showLoader() {
+  // Dialog-based loading (ServiceFlow standard)
+  void showLoading(BuildContext context, {String? message}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(message ?? 'Carregando...'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void hideLoading(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+  }
+
+  // State-based overlay loading (compatibility)
+  void showLoader(BuildContext context) {
     if (_overlayEntry != null) return;
 
     _overlayEntry = OverlayEntry(
@@ -24,11 +50,5 @@ mixin LoaderMixin<T extends StatefulWidget> on State<T> {
       _overlayEntry!.remove();
       _overlayEntry = null;
     }
-  }
-
-  @override
-  void dispose() {
-    hideLoader();
-    super.dispose();
   }
 }

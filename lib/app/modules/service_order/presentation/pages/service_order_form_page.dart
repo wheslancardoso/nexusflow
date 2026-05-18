@@ -80,7 +80,7 @@ class _ServiceOrderFormPageState extends State<ServiceOrderFormPage> with Messag
         return;
       }
 
-      showLoader();
+      showLoader(context);
       
       // Simulate processing time 2 seconds
       await Future.delayed(const Duration(seconds: 2));
@@ -89,7 +89,7 @@ class _ServiceOrderFormPageState extends State<ServiceOrderFormPage> with Messag
       final signatureBase64 = signatureBytes != null ? base64Encode(signatureBytes) : null;
 
       final order = ServiceOrder(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: DateTime.now().millisecondsSinceEpoch,
         cliente: _selectedCliente!,
         descricao: _descricaoController.text,
         valor: double.tryParse(_valorController.text) ?? 0.0,

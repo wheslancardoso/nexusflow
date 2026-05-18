@@ -7,26 +7,20 @@ abstract class BaseViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void setLoading(bool value) {
-    _isLoading = value;
+  void setLoading(bool loading) {
+    _isLoading = loading;
     notifyListeners();
   }
 
-  void setError(String? message) {
-    _errorMessage = message;
+  void setError(String? error) {
+    _errorMessage = error;
     notifyListeners();
   }
 
-  void clearError() {
-    _errorMessage = null;
-    notifyListeners();
-  }
-
-  // Helper to handle async operations with loading and error states
   Future<void> runWithLoading(Future<void> Function() action) async {
     try {
       setLoading(true);
-      clearError();
+      setError(null);
       await action();
     } catch (e) {
       setError(e.toString());

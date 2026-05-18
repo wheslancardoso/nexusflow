@@ -135,10 +135,6 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         _clientes = clients;
         _usuarios = users;
-        // Default selected client if list not empty
-        if (_clientes.isNotEmpty && _selectedCliente == null) {
-          _selectedCliente = _clientes.first;
-        }
       });
     } catch (e) {
       // Fallback grace
@@ -384,13 +380,12 @@ class _DashboardPageState extends State<DashboardPage> {
   // TAB 1: PAINEL (DASHBOARD & KPI)
   // ==========================================
   Widget _buildDashboardTab() {
-    final serviceOrderController = context.watch<ServiceOrderController>();
     final dashboardController = context.watch<DashboardController>();
 
     final colorTotal = const Color(0xFF6366F1);
     final colorAberto = Colors.orangeAccent;
     final colorExecucao = const Color(0xFF00E5FF);
-    final colorExecutado = Colors.emeraldAccent;
+    final colorExecutado = Colors.greenAccent;
 
     // Filter local orders
     final activeOrders = dashboardController.getOrdersByStatus(_osFilter);
@@ -405,11 +400,14 @@ class _DashboardPageState extends State<DashboardPage> {
         // Title
         const Padding(
           padding: EdgeInsets.only(left: 4, bottom: 12),
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+          child: Text(
+            'Desempenho e Indicadores',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
 
@@ -491,7 +489,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       Text(
                         'Nenhuma O.S. encontrada para o filtro $_osFilter.',
                         style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
-                        textAlign: Center,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
@@ -891,12 +889,12 @@ class _DashboardPageState extends State<DashboardPage> {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: client.isSync == 1
-                                    ? Colors.emeraldAccent.withOpacity(0.08)
+                                    ? Colors.greenAccent.withOpacity(0.08)
                                     : Colors.orangeAccent.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: client.isSync == 1
-                                      ? Colors.emeraldAccent.withOpacity(0.2)
+                                      ? Colors.greenAccent.withOpacity(0.2)
                                       : Colors.orangeAccent.withOpacity(0.2),
                                   width: 0.8,
                                 ),
@@ -904,7 +902,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               child: Text(
                                 client.isSync == 1 ? 'Sincronizado' : 'Offline',
                                 style: TextStyle(
-                                  color: client.isSync == 1 ? Colors.emeraldAccent : Colors.orangeAccent,
+                                  color: client.isSync == 1 ? Colors.greenAccent : Colors.orangeAccent,
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1008,7 +1006,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                           content: Text('Cliente cadastrado com sucesso!'),
-                                          backgroundColor: Colors.emerald,
+                                          backgroundColor: Colors.green,
                                         ),
                                       );
                                     }
@@ -1177,8 +1175,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   final formatted = _formatCpf(val);
                   if (formatted != val) {
                     _osClientCpfController.text = formatted;
-                    _osClientCpfController.selection = TextSelection.fromPosition(
-                      TextSelection.fromPosition(TextPosition(offset: formatted.length)).position,
+                    _osClientCpfController.selection = TextSelection.collapsed(
+                      offset: formatted.length,
                     );
                   }
                   _onCpfChanged(formatted);
@@ -1348,14 +1346,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Icon(
                               _hasFotoAntes ? Icons.check_circle : Icons.add_a_photo_outlined,
-                              color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
+                              color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white38,
                               size: 22,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _hasFotoAntes ? 'Foto Antes ✓' : 'Foto Antes',
                               style: TextStyle(
-                                color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white40,
+                                color: _hasFotoAntes ? const Color(0xFF00E5FF) : Colors.white38,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1385,14 +1383,14 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Icon(
                               _hasFotoDepois ? Icons.check_circle : Icons.add_a_photo_outlined,
-                              color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
+                              color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white38,
                               size: 22,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _hasFotoDepois ? 'Foto Depois ✓' : 'Foto Depois',
                               style: TextStyle(
-                                color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white40,
+                                color: _hasFotoDepois ? const Color(0xFF34D399) : Colors.white38,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1544,7 +1542,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✓ O.S. faturada e cliente persistido com sucesso!'),
-            backgroundColor: Colors.emerald,
+            backgroundColor: Colors.green,
           ),
         );
       } else {
@@ -1671,17 +1669,17 @@ class _DashboardPageState extends State<DashboardPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isSync ? Colors.emeraldAccent.withOpacity(0.08) : Colors.orangeAccent.withOpacity(0.08),
+                            color: isSync ? Colors.greenAccent.withOpacity(0.08) : Colors.orangeAccent.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSync ? Colors.emeraldAccent.withOpacity(0.2) : Colors.orangeAccent.withOpacity(0.2),
+                              color: isSync ? Colors.greenAccent.withOpacity(0.2) : Colors.orangeAccent.withOpacity(0.2),
                               width: 0.8,
                             ),
                           ),
                           child: Text(
                             isSync ? 'Sincronizado' : 'Offline',
                             style: TextStyle(
-                              color: isSync ? Colors.emeraldAccent : Colors.orangeAccent,
+                              color: isSync ? Colors.greenAccent : Colors.orangeAccent,
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1814,7 +1812,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       Text(
                         order.isSync == 1 ? 'Sincronizado (Supabase)' : 'Local (SQLite)',
                         style: TextStyle(
-                          color: order.isSync == 1 ? Colors.emeraldAccent : Colors.orangeAccent,
+                          color: order.isSync == 1 ? Colors.greenAccent : Colors.orangeAccent,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),

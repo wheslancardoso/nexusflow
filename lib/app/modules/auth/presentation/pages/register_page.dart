@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/mixins/messages_mixin.dart';
 import '../../../../core/mixins/validator_mixin.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
-import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/app_logo.dart';
+import '../../../../shared/widgets/liquid_background.dart';
+import '../../../../shared/widgets/glass_container.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -49,73 +50,135 @@ class _RegisterPageState extends State<RegisterPage> with MessagesMixin, Validat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Criar Conta'),
+        title: const Text(
+          'Criar Conta',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const AppLogo(),
-                const SizedBox(height: 32),
-                Text(
-                  'Crie sua identidade',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+      body: LiquidBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AppLogo(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Nova Conta',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Crie sua conta técnica para sincronizar e gerenciar ordens.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    
+                    // Breathtaking Glass Container for Register Form
+                    GlassContainer(
+                      padding: const EdgeInsets.all(24.0),
+                      borderRadius: 24,
+                      borderColor: Colors.white.withOpacity(0.12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CustomTextField(
+                            label: 'Nome Completo',
+                            controller: _nameController,
+                            icon: Icons.person_outline,
+                            validator: (v) => validateMinLength(v, 3),
+                            isGlass: true,
+                          ),
+                          const SizedBox(height: 14),
+                          CustomTextField(
+                            label: 'E-mail',
+                            controller: _emailController,
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: validateEmail,
+                            isGlass: true,
+                          ),
+                          const SizedBox(height: 14),
+                          CustomTextField(
+                            label: 'Senha',
+                            controller: _passwordController,
+                            icon: Icons.lock_outline,
+                            isPassword: true,
+                            validator: (v) => validateMinLength(v, 6),
+                            isGlass: true,
+                          ),
+                          const SizedBox(height: 14),
+                          CustomTextField(
+                            label: 'Confirmação de Senha',
+                            controller: _confirmPasswordController,
+                            icon: Icons.lock_outline,
+                            isPassword: true,
+                            validator: (v) => validateMinLength(v, 6),
+                            isGlass: true,
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // Glowing Amber Register Button
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _executarRegistro,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFBBF24), // Vibrant Amber Accent
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              minimumSize: const Size(double.infinity, 50),
+                              elevation: 8,
+                              shadowColor: const Color(0xFFFBBF24).withOpacity(0.3),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                    ),
+                                  )
+                                : const Text('Registrar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Return Link
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF00E5FF), // Cyan Accent
+                      ),
+                      child: const Text('Já tenho conta? Acessar login'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                CustomTextField(
-                  label: 'Nome Completo',
-                  controller: _nameController,
-                  icon: Icons.person,
-                  validator: (v) => validateMinLength(v, 3),
-                ),
-                const SizedBox(height: 16),
-                CustomTextField(
-                  label: 'E-mail',
-                  controller: _emailController,
-                  icon: Icons.email,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: validateEmail,
-                ),
-                const SizedBox(height: 16),
-                CustomTextField(
-                  label: 'Senha',
-                  controller: _passwordController,
-                  icon: Icons.lock,
-                  isPassword: true,
-                  validator: (v) => validateMinLength(v, 6),
-                ),
-                const SizedBox(height: 16),
-                CustomTextField(
-                  label: 'Confirmação de Senha',
-                  controller: _confirmPasswordController,
-                  icon: Icons.lock,
-                  isPassword: true,
-                  validator: (v) => validateMinLength(v, 6),
-                ),
-                const SizedBox(height: 32),
-                CustomButton(
-                  text: 'Registrar',
-                  isLoading: _isLoading,
-                  onPressed: _executarRegistro,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Já tenho conta'),
-                ),
-              ],
+              ),
             ),
           ),
         ),

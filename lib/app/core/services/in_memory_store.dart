@@ -27,4 +27,9 @@ class InMemoryStore {
       _orders[index] = updatedOrder;
     }
   }
+
+  void clear() {
+    _clientes.clear();
+    _orders.clear();
+  }
 }

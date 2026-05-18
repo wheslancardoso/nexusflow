@@ -1,6 +1,7 @@
 import '../base/base.schedule.dart';
 import '../../modules/usuarios/data/usuario.schedule.dart';
 import '../../modules/clientes/data/cliente.schedule.dart';
+import '../../modules/service_order/data/service_order_schedule.dart';
 
 class ScheduleManager {
   static final ScheduleManager _instance = ScheduleManager._internal();
@@ -13,6 +14,7 @@ class ScheduleManager {
     _schedules.addAll([
       UsuarioSchedule(),
       ClienteSchedule(),
+      ServiceOrderSchedule(),
     ]);
 
     for (final schedule in _schedules) {

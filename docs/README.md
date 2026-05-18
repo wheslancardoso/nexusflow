@@ -1,5 +1,8 @@
 # 🚀 Projeto ServiceFlow - Gestão Inteligente de O.S.
 
+> [!IMPORTANT]
+> **🪐 APRESENTAÇÃO DO PROJETO (21/05/2026):** Mapeamos a **Wikipedia Suprema do Projeto & Roteiro de Apresentação** para os integrantes do grupo dominarem tudo! Acesse o documento oficial aqui: **[WIKIPEDIA_NEXUSFLOW.md](file:///home/lan/nexusflow/docs/WIKIPEDIA_NEXUSFLOW.md)**.
+
 ## 📋 Visão Geral
 O **ServiceFlow** é um sistema completo de gestão de ordens de serviço (O.S.) desenvolvido como projeto acadêmico da disciplina de Desenvolvimento de Sistemas para Dispositivos Móveis. O projeto implementa uma arquitetura **offline-first** robusta, com sincronização inteligente em background, interface customizada e modular, e sistema de componentes reutilizáveis para escalabilidade e manutenibilidade.
 

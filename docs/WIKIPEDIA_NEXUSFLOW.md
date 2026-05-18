@@ -17,6 +17,7 @@ Clique em qualquer seção para ir direto ao tema:
 7. [🧪 Cobertura de Testes Automatizados (21 Testes)](#-7-cobertura-de-testes-automatizados-21-testes) — *Como provamos que o sistema é indestrutível.*
 8. [🎤 Roteiro de Apresentação (Script Passo a Passo)](#-8-roteiro-de-apresentação-script-passo-a-passo) — *O que cada integrante deve falar e demonstrar no dia 21/05.*
 9. [🛠️ Guia de Configuração, Execução e Debug](#-9-guia-de-configuração-execução-e-debug) — *Como rodar o app, testes e ver logs localmente.*
+10. [🗄️ Mapeamento de Banco de Dados (Schemas SQLite)](#-10-mapeamento-de-banco-de-dados-schemas-sqlite) — *A modelagem das tabelas do banco de dados local.*
 
 ---
 
@@ -262,6 +263,65 @@ O sistema possui o `LogService` centralizado. Caso precise demonstrar o funciona
 * `[INFO]` - Mensagens informativas de rotinas comuns de tela.
 * `[WARNING]` - Avisos de atenção (ex: CPF não localizado).
 * `[ERROR]` - Falhas de sistema capturadas com stack trace completo para auditoria.
+
+---
+
+## 🗄️ 10. Mapeamento de Banco de Dados (Schemas SQLite)
+
+Para fins de modelagem de dados da disciplina, o banco de dados do NexusFlow possui as tabelas a seguir mapeadas fisicamente no SQLite local:
+
+### 1. Tabela `usuarios`
+Armazena a equipe técnica e suas credenciais/configurações.
+| Coluna | Tipo | Restrições / Padrão | Descrição |
+| --- | --- | --- | --- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Identificador interno local |
+| `supabase_id` | `TEXT` | `NOT NULL UNIQUE` | ID de referência global do Supabase Auth |
+| `email` | `TEXT` | `NOT NULL UNIQUE` | E-mail do colaborador |
+| `nome_completo` | `TEXT` | `NOT NULL` | Nome completo do usuário técnico |
+| `grupo_id` | `TEXT` | `NOT NULL` | ID do grupo para isolamento multitenant |
+| `perfil` | `TEXT` | `DEFAULT 'tecnico'` | Nível de permissão (administrador/tecnico) |
+| `ativo` | `INTEGER` | `DEFAULT 1` | Indicador de exclusão lógica (Soft Delete) |
+| `is_sync` | `INTEGER` | `DEFAULT 0` | Status de sincronização na nuvem (0: Pendente, 1: Sincronizado) |
+
+### 2. Tabela `clientes`
+Armazena a carteira de clientes sincronizada em lotes.
+| Coluna | Tipo | Restrições / Padrão | Descrição |
+| --- | --- | --- | --- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Identificador interno local |
+| `nome` | `TEXT` | `NOT NULL` | Nome completo / Razão social do cliente |
+| `email` | `TEXT` | `NOT NULL` | E-mail corporativo |
+| `telefone` | `TEXT` | `NOT NULL` | Telefone de contato formatado |
+| `documento` | `TEXT` | `NULLABLE` | CPF ou CNPJ único do cliente |
+| `endereco` | `TEXT` | `NULLABLE` | Endereço do cliente |
+| `ativo` | `INTEGER` | `DEFAULT 1` | Indicador de exclusão lógica (Soft Delete) |
+| `is_sync` | `INTEGER` | `DEFAULT 0` | Status de sincronização na nuvem (0: Pendente, 1: Sincronizado) |
+
+### 3. Tabela `ordens_servico`
+Tabela centralizada de faturamento e registro de manutenções técnicas.
+| Coluna | Tipo | Restrições / Padrão | Descrição |
+| --- | --- | --- | --- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Identificador interno local da O.S. |
+| `cliente_id` | `INTEGER` | `NOT NULL` (FK -> `clientes`) | Vínculo com a chave estrangeira do cliente |
+| `tecnico_id` | `INTEGER` | `NOT NULL` (FK -> `tecnicos`) | Vínculo com a chave estrangeira do técnico encarregado |
+| `observacao` | `TEXT` | `NULLABLE` | Descrição técnica dos problemas detectados |
+| `valor_pecas` | `REAL` | `DEFAULT 0` | Valor em peças aplicadas na O.S. |
+| `foto_antes` | `TEXT` | `NULLABLE` | Path local/URL da imagem do equipamento com problema |
+| `foto_depois` | `TEXT` | `NULLABLE` | Path local/URL da imagem do equipamento consertado |
+| `assinatura` | `TEXT` | `NULLABLE` | Assinatura em Base64 do cliente no faturamento |
+| `ativo` | `INTEGER` | `DEFAULT 1` | Indicador de exclusão lógica (Soft Delete) |
+| `is_sync` | `INTEGER` | `DEFAULT 0` | Status de sincronização na nuvem (0: Pendente, 1: Sincronizado) |
+
+### 4. Tabela `system_logs`
+Mesa de diagnósticos de segurança, alertas e falhas do aplicativo.
+| Coluna | Tipo | Restrições / Padrão | Descrição |
+| --- | --- | --- | --- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Identificador interno do log |
+| `level` | `TEXT` | `NOT NULL` | Gravidade do evento (INFO, WARNING, ERROR) |
+| `source` | `TEXT` | `NOT NULL` | Classe de origem do evento no Flutter |
+| `operation` | `TEXT` | `NOT NULL` | Método no qual o evento ocorreu |
+| `message` | `TEXT` | `NOT NULL` | Descrição clara em pt-BR da ação ocorrida |
+| `metadata` | `TEXT` | `NULLABLE` | Payload detalhado em JSON de contexto |
+| `timestamp` | `TEXT` | `DEFAULT CURRENT_TIMESTAMP` | Data/hora exata do registro de log local |
 
 ---
 
